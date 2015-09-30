@@ -1,0 +1,135 @@
+\documentclass[spanish]{mathnotes}
+
+% Title page
+\title{Métodos numéricos para EDP}
+\subtitle{Comparación de diversos métodos aplicados a la ecuación del calor}
+\author{Guillermo Ruiz Álvarez}
+\date{\today}
+\university{Universidad Autónoma de Madrid}
+
+\begin{document}
+	\makepre
+	
+	\section{Definición del problema}
+	Consideramos el siguiente problema para la ecuación del calor
+	\begin{equation*}
+	\left\{
+		\begin{array}{l l}
+			u_t = u_{xx} & (x,t)\in(0,1)\times (0,t_F)\\
+			u(0,t) = u(1,t) = 0 & t>0\\
+			u(x,0) = u_0(x) = x(1-x) & 0\le x\le 1
+		\end{array}
+	\right.
+	\end{equation*}
+	
+	Vamos a obtener aproximaciones a la solución de este problema utilizando el $\theta$-método para los siguientes valores de $\theta$:
+	\begin{itemize}
+		\item $\theta = 0$: método explícito.
+		\item $\theta = 1$: método implícito.
+		\item $\theta = \frac{1}{2}$: método de Crank-Nicolson.
+	\end{itemize}
+	
+	En todo lo que sigue se utilizará la notación y los datos que siguen:
+	\begin{center}
+			\framebox{$t_F = 0.6$}\hspace{1em}
+			\framebox{$\nu = \frac{\Delta t}{(\Delta x)^2}$}\hspace{1em}
+			\framebox{$\mu = \frac{\Delta t}{\Delta x}$}
+	\end{center}
+	
+	\section{Programación del $\theta$-método}
+	El $\theta$-método tiene la forma siguiente (con \framebox{$j =  0,1, \hdots, J$} y \framebox{$n \in \left[0, t_F\right]$}): 
+	$$\frac{U_j^{n+1}-U_j^n}{\Delta t} = 
+	\theta \left[\frac{U_{j+1}^{n+1}-2U_{j}^{n+1}+U_{j-1}^{n+1}}{(\Delta x)^2}\right] +
+	(1-\theta) \left[ \frac{U_{j+1}^n-2U_j^n+U_{j-1}^n}{(\Delta x)^2}\right]$$
+	
+	Matricialmente, el método tiene la expresión:
+	$$AU^{n+1} = BU^n$$
+	
+	Y se basa en resolver la ecuación matricial y obtener:
+	$$U^{n+1} = A^{-1} B U^n$$
+	
+	Donde:
+	\begin{equation*}
+		\begin{array}{l c r}
+				U^n = \begin{bmatrix}
+				U_1^{n}\\
+				U_2^{n}\\
+				\vdots\\
+				U_{J-1}^{n}\\
+				\end{bmatrix}
+				&
+				U^{n+1} = \begin{bmatrix}
+				U_1^{n+1}\\
+				U_2^{n+1}\\
+				\vdots\\
+				U_{J-1}^{n+1}\\
+				\end{bmatrix}
+				&
+				A =
+				\begin{bmatrix}
+				1+2\nu\theta & -\nu\theta &        & \\
+				-\nu\theta   & \ddots     & \ddots & \\
+				& \ddots     & \ddots     & -\nu\theta\\
+				&            & -\nu\theta & 1+2\nu\theta\\
+				\end{bmatrix}
+		\end{array}
+	\end{equation*}
+	\begin{equation*}
+	B = 
+	\begin{bmatrix}
+	1-(1-\theta)2\nu         & (1-\theta)\nu&        & \\
+	(1-\theta)\nu            & \ddots       & \ddots & \\
+	& \ddots & \ddots        & (1-\theta)\nu\\
+	&        & (1-\theta)\nu & 1-(1-\theta)2\nu\\
+	\end{bmatrix}
+	\end{equation*}
+		
+	A continuación se muestra el código en \textsc{MatLab} del $\theta$-método para la ecuación del calor con las condiciones iniciales y de contorno descritas.
+	
+	
+	\lstset{style=matlabStyle}
+	\lstinputlisting{../src/thetamet.m}
+	
+	\newpage
+	Para crear las matrices $A$ y $B$ se ha programado una función que acepta como parámetros el tamaño de la matriz y los valores de las tres diagonales y devuelve la matriz tridiagonal optimizada.
+	\lstset{style=matlabStyle}
+	\lstinputlisting{../src/tridiag.m}
+	
+	\section{Programación de la solución real}
+	La solución real del problema es:
+	$$u(x,t) = \sum_{m=1}^\infty B_m e^{-(m\pi)^2 t} sin(m\pi x)$$ 
+	
+	Los coeficientes $B_m$ tienen la expresión: $$B_m = 2\int_0^1 u_0(x) sin(m\pi x)$$
+	
+	Realizando la integral por partes se obtiene:
+	$$B_m = = \frac{4\left[ (-1)^{m+1}+1\right]}{\pi^3m^3}$$
+	
+	Para programar el método se ha escrito una función que realiza la suma y la trunca cuando llega a cierto número de iteraciones. El código de dicha función se muestra a continuación.
+	
+	\lstset{style=matlabStyle}
+	\lstinputlisting{../src/heat_sol.m}
+	
+	\section{Ejercicio 1}
+	A continuación se muestra un gráfico en escala doblemente logarítmica representando $J$ frente al error en norma infinito en tiempo $t_F = 0.6$ usando distintos valores de $\nu$ y $\mu$ para los tres métodos.
+	
+	\subsection{Método explícito}
+	
+	
+	\subsection{Método implícito}
+	
+	
+	\subsection{Método de Crank-Nicolson}
+		
+	\section{Ejercicio 2}
+	A continuación se muestra un gráfico en escala doblemente logarítmica representando $t_{cpu}$ frente al error en norma infinito en tiempo $t_F = 0.6$ usando distintos valores de $\nu$ y $\mu$ para los tres métodos.
+	
+	\subsection{Método explícito}
+	
+	
+	\subsection{Método implícito}
+	
+	
+	\subsection{Método de Crank-Nicolson}
+	
+	
+\end{document}
