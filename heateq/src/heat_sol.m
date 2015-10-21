@@ -1,4 +1,3 @@
-%
 % Solution for the heat equation problem with:
 %   - Initial value:  x(0) = x(1) = 0
 %   - Boundary value: u_0  = x(1-x)

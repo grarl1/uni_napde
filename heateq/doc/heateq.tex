@@ -37,7 +37,7 @@
 	\end{center}
 	
 	\section{Programación del $\theta$-método}
-	El $\theta$-método tiene la forma siguiente (con \framebox{$j =  0,1, \hdots, J$} y \framebox{$n \in \left[0, t_F\right]$}): 
+	El $\theta$-método tiene la forma siguiente, con $j =  0,1, \hdots, J$ y $n=0,1,\hdots, N$: 
 	$$\frac{U_j^{n+1}-U_j^n}{\Delta t} = 
 	\theta \left[\frac{U_{j+1}^{n+1}-2U_{j}^{n+1}+U_{j-1}^{n+1}}{(\Delta x)^2}\right] +
 	(1-\theta) \left[ \frac{U_{j+1}^n-2U_j^n+U_{j-1}^n}{(\Delta x)^2}\right]$$
@@ -99,37 +99,379 @@
 	La solución real del problema es:
 	$$u(x,t) = \sum_{m=1}^\infty B_m e^{-(m\pi)^2 t} sin(m\pi x)$$ 
 	
-	Los coeficientes $B_m$ tienen la expresión: $$B_m = 2\int_0^1 u_0(x) sin(m\pi x)$$
+	Los coeficientes $B_m$ tienen la expresión: $$B_m = 2\int_0^1 x(1-x) sin(m\pi x)$$
 	
 	Realizando la integral por partes se obtiene:
-	$$B_m = = \frac{4\left[ (-1)^{m+1}+1\right]}{\pi^3m^3}$$
+	$$B_m = \frac{4\left[ (-1)^{m+1}+1\right]}{\pi^3m^3}$$
 	
 	Para programar el método se ha escrito una función que realiza la suma y la trunca cuando llega a cierto número de iteraciones. El código de dicha función se muestra a continuación.
 	
 	\lstset{style=matlabStyle}
 	\lstinputlisting{../src/heat_sol.m}
 	
+	\newpage
 	\section{Ejercicio 1}
-	A continuación se muestra un gráfico en escala doblemente logarítmica representando $J$ frente al error en norma infinito en tiempo $t_F = 0.6$ usando distintos valores de $\nu$ y $\mu$ para los tres métodos.
+	En la figura \ref{fig:error} se muestra un gráfico en escala doblemente logarítmica representando $J$ frente al error en norma infinito en tiempo $t_F = 0.6$ usando distintos valores de $\nu$ y $\mu$ para los tres métodos. 
 	
-	\subsection{Método explícito}
+	Se han utilizado valores para $J$ desde $10$ hasta $100$ con un paso de $5$ y 100 iteraciones para la suma truncada.
 	
+	\fimg{../img/error.png}{width=\textwidth}{$J$ frente al error en norma infinito (Escala logarítima).}{error}
 	
-	\subsection{Método implícito}
+	\subsection{Convergencia del $\theta$-método}
+	Vamos a dividir el estudio de la convergencia del $\theta$-método en dos fases. En primer lugar estudiaremos el control del residuo del esquema y seguidamente se estudiará la estabilidad del mismo.
 	
+	\subsubsection{Consistencia}
+	El error de truncación puede escribirse de la siguiente forma:
+	$$T_j^n = \frac{u_j^{n+1}-u_j^n}{\Delta t} 
+	- \theta\frac{u_{j+1}^{n+1}-2u_{j}^{n+1}+u_{j-1}^{n+1}}{(\Delta x)^2} 
+	- (1-\theta)\frac{u_{j+1}^{n}-2u_{j}^{n}+u_{j-1}^{n}}{(\Delta x)^2}$$
 	
-	\subsection{Método de Crank-Nicolson}
+	Vamos a realizar el desarrollo de Taylor en el punto $\left(x_j, t_{n+\frac{1}{2}}\right)$.
+	
+	\begin{itemize}
+			\item  \textbf{Paso 1:} Realizamos el desarrollo de Taylor en el punto $\left(x_j, t_{n+\frac{1}{2}}\right)$ del primer término.
+			\begin{align*}
+			u_{j}^{n+1} & = \left[u + \left(\frac{1}{2}\Delta t\right)u_t + \frac{1}{2}\left(\frac{1}{2}\Delta t\right)^2u_{tt} + \frac{1}{6}\left(\frac{1}{2}\Delta t\right)^3u_{ttt} + \hdots \right]_j^{n+\frac{1}{2}}\\\\
+			u_{j}^{n} & = \left[u - \left(\frac{1}{2}\Delta t\right)u_t + \frac{1}{2}\left(\frac{1}{2}\Delta t\right)^2u_{tt} - \frac{1}{6}\left(\frac{1}{2}\Delta t\right)^3u_{ttt} + \hdots \right]_j^{n+\frac{1}{2}}
+			\end{align*}
+			
+			Obtenemos:	
+			$$\frac{u_j^{n+1}-u_j^n}{\Delta t} = \left[u_t+\frac{1}{24}(\Delta t)^2u_{ttt}+\hdots \right]_j^{n+\frac{1}{2}}$$
+			
+			\item \textbf{Paso 2:} Realizamos el desarrollo de Taylor en el punto $\left(x_j, t_n\right)$ y $\left(x_j, t_{n+1}\right)$ respectivamente de los siguientes términos:
+			\begin{align*}
+			u_{j+1}^{n+1} -2u_{j}^{n+1} + u_{j-1}^{n+1} & = \left[\Delta x ^2 u_{xx} + \frac{1}{12}\Delta x ^4 u_{xxxx} + \frac{2}{6!}\Delta x ^6 u_{xxxxxx}+\hdots \right]_j^{n+1}\\
+			u_{j+1}^{n} -2u_{j}^{n} + u_{j-1}^{n} & = \left[\Delta x ^2 u_{xx} + \frac{1}{12}\Delta x ^4 u_{xxxx} + \frac{2}{6!}\Delta x ^6 u_{xxxxxx}+\hdots \right]_j^{n}
+			\end{align*}
+			\item \textbf{Paso 3:} Obtenemos, en el punto $\left(x_j, t_{n+\frac{1}{2}}\right)$, los desarrollos de los términos anteriores, partiendo de los pasos 1 y 2:
+			\begin{align*}
+			u_{j+1}^{n+1} -2u_{j}^{n+1} + u_{j-1}^{n+1} & = \left[\Delta x ^2 u_{xx} + \frac{1}{12}\Delta x ^4 u_{xxxx} + \frac{2}{6!}\Delta x^6 u_{xxxxxx}+\hdots \right]_j^{n+\frac{1}{2}}\\
+			& + \left(\frac{1}{2}\Delta t\right) \left[\Delta x ^2 u_{xxt} + \frac{1}{12}\Delta x ^4 u_{xxxxt} +\hdots \right]_j^{n+\frac{1}{2}}\\
+			& + \frac{1}{2}\left(\frac{1}{2}\Delta t\right)^2 \left[\Delta x ^2 u_{xxtt} + \hdots \right]_j^{n+\frac{1}{2}}
+			\end{align*}
+			\begin{align*}
+			u_{j+1}^{n} -2u_{j}^{n} + u_{j-1}^{n} & = \left[\Delta x ^2 u_{xx} + \frac{1}{12}\Delta x ^4 u_{xxxx} + \frac{2}{6!}\Delta x^6 u_{xxxxxx}+\hdots \right]_j^{n+\frac{1}{2}}\\
+			& - \left(\frac{1}{2}\Delta t\right) \left[\Delta x ^2 u_{xxt} + \frac{1}{12}\Delta x ^4 u_{xxxxt} +\hdots \right]_j^{n+\frac{1}{2}}\\
+			& + \frac{1}{2}\left(\frac{1}{2}\Delta t\right)^2 \left[\Delta x ^2 u_{xxtt} + \hdots \right]_j^{n+\frac{1}{2}}
+			\end{align*}
+			
+			\item \textbf{Paso 4: } Realizamos el desarrollo de Taylor en el punto $\left(x_j, t_{n+\frac{1}{2}}\right)$ del segundo término.
+			\begin{align*}
+			\theta\left[\frac{u_{j+1}^{n+1}-2u_{j}^{n+1}+u_{j-1}^{n+1}}{\Delta x ^2}\right] + (1 - \theta) \left[\frac{u_{j+1}^{n}-2u_{j}^{n}+u_{j-1}^{n}}{\Delta x ^2}\right] = \\
+			\left[u_{xx} + \frac{1}{12}\Delta x^2 u_{xxxx} + \frac{2}{6!}\Delta x ^4 u_{xxxxxx}  + \hdots\right]_j^{n+\frac{1}{2}}\\
+			+\left(\theta - \frac{1}{2}\right)\Delta t \left[u_{xxt} + \frac{1}{12}\Delta x ^2 u_{xxxxt}\right]_j^{n+\frac{1}{2}}\\
+			+\frac{1}{8}\Delta t ^2\left[u_{xxtt}\right]_j^{n+\frac{1}{2}}
+			\end{align*}
+			
+			\item \textbf{Paso 5: }	Reordenamos los términos de error
+			\begin{align*}
+			T_j^n = & \left[\left(\frac{1}{2}-\theta\right)\Delta t u_{xxt}- \frac{1}{12}(\Delta x)^2 u_{xxxx}\right]
+			+ \left[\frac{1}{24}\Delta t^2 u_{ttt}-\frac{1}{8}\Delta t ^2 u_{xxtt}\right]\\
+			& + \left[\frac{1}{12}\left(\frac{1}{2}-\theta\right)\Delta t \Delta x^2 u_{xxxxt}\right] - \frac{2}{6!}\Delta x ^4 u_{xxxxxx}
+			\end{align*}
+			\end{itemize}
+			
+			Escrito de otro modo, tenemos que
+			\begin{align*}
+			T_j^n = & \left[\left(\frac{1}{2}-\theta\right)\Delta t u_{xxt}- \frac{1}{12}(\Delta x)^2 u_{xxxx}\right]
+			+ \left[\frac{1}{24}\Delta t^2 u_{ttt}-\frac{1}{8}\Delta t ^2 u_{xxtt}\right]\\
+			& + \left[\frac{1}{12}\left(\frac{1}{2}-\theta\right)\Delta t \Delta x^2 u_{xxxxt}\right] - \frac{2}{6!}\Delta x ^4 u_{xxxxxx}
+			\end{align*}
+			
+			En general tenemos que $T_j^n = \mathcal{O}(\Delta t) + \mathcal{O}\left((\Delta x)^2\right)$. En conclusión, el método es incondicionalmente consistente ya que 
+			$$T_j^n  \scriptstyle{\xrightarrow{\Delta t\to0,\ \Delta x \to 0}} \textstyle\ 0$$
+			
+			\subsubsection{Estabilidad}
+			Para estudiar la estabilidad, vamos a realizar el análisis de Fourier del método. La solución general del problema para la ecuación del calor tiene la forma siguiente, con $B_m$ con la expresión que ya se ha definido:
+			$$u(x,t) = \sum_{m=-\infty}^\infty B_m e^{-(m\pi)^2 t}e^{i(m\pi)x}$$
+			
+			Para realizar el análisis de Fourier del método explícito vamos a buscar el factor de amplificación $\lambda(k)$ de forma que $U_j^n = \lambda^n(k)e^{ikj\Delta x}$, con $k=m\pi$. Partimos escribiendo el método de la siguiente forma:
+			$$U_j^{n+1} = U_j^n + \nu\theta\left[U_{j+1}^{n+1} - 2U_{j}^{n+1} + U_{j-1}^{n+1}\right] + \nu(1-\theta)\left[U_{j+1}^{n}-2U_{j}^{n}+U_{j-1}^{n}\right]$$
+			
+			\begin{itemize}
+				\item \textbf{Paso 1: } Sustituimos $U_j^n$ por $\lambda^n(k)e^{ikj\Delta x}$ en el método obteniendo
+				\begin{align*}
+					\lambda^{n+1}e^{ikj\Delta x} =&\  \lambda^ne^{ijk\Delta x}\\
+					&+\nu\theta\lambda^{n+1}\left[e^{ik(j+1)\Delta x}-2e^{ik(j)\Delta x}+e^{ik(j-1)\Delta x}\right]\\
+					&+\nu(1-\theta)\lambda^{n}\left[e^{ik(j+1)\Delta x}-2e^{ik(j)\Delta x}+e^{ik(j-1)\Delta x}\right]
+				\end{align*}
+				
+				\item Dividimos por $\lambda^ne^{ikj\Delta x}$:
+				\begin{align*}
+					\lambda &= 1 + \nu\theta\lambda\left[e^{ik\Delta x}-2+e^{-ik\Delta x}\right] + \nu(1-\theta)\left[e^{ik\Delta x}-2+e^{-ik\Delta x}\right]\\
+					&= 1 + \nu\theta\lambda\left[-4sin^2\left(\frac{k\Delta x}{2}\right)\right] + \nu(1-\theta)\left[-4sin^2\left(\frac{k\Delta x}{2}\right)\right]
+				\end{align*}
+				
+				
+				\item Despejamos $\lambda$:
+				$$\lambda(k) = \frac{1-4\nu(1-\theta)\left[sin^2\left(\frac{k\Delta x}{2}\right)\right]}{1+4\nu \theta\left[sin^2\left(\frac{k\Delta x}{2}\right)\right]}$$
+			\end{itemize}
+			
+			Tenemos inestabilidad si $\left|\lambda\right|>1$, ya que implicaría que la serie infinita diverge. Siempre tenemos que $\lambda < 1$, por tanto esta condición es equivalente a $\lambda < -1$, luego tendríamos:
+			$$1-4\nu(1-\theta)\left[sin^2\left(\frac{k\Delta x}{2}\right)\right] < -1-4\nu \theta\left[sin^2\left(\frac{k\Delta x}{2}\right)\right]$$
+			
+			Que es equivalente a la siguiente condición:
+			$$2<4\nu(1-2\theta)\left[sin^2\left(\frac{k\Delta x}{2}\right)\right] < 4\nu(1-2\theta)$$
+			
+			Como conclusión podemos resumir la estabilidad del método, en función del valor de $\theta$, como sigue:
+			\begin{itemize}
+				\item $0<\theta < \frac{1}{2}$: estabilidad si $\nu < \frac{1}{2(1-2\theta)}$.
+				\item $\frac{1}{2}\le \theta \le 1$: estabilidad incondicional. 
+			\end{itemize}
+			
+			\subsubsection{Convergencia}
+			En cuanto a la convergencia, concluímos que:
+			\begin{itemize}
+				\item Método explícito ($\theta = 0$): Convergente si $\nu < \frac{1}{2}$.
+				\item Método de Crank-Nicolson ($\theta = \frac{1}{2}$): Convergente siempre.
+				\item Método implícito ($\theta = 1$): Convergente siempre.
+			\end{itemize}
+	
+	\subsection{Cálculo del orden a partir de los resultados experimentales}
+	Para calcular el orden de convergencia del $\theta$-método hay que hallar las pendientes de las rectas representadas en escala logarítimica. La razón es la siguiente, supongamos que el error del método es $E=\mathcal{O}((\Delta x)^s)$ es decir:
+	$$E = C\cdot (\Delta x)^s = \frac{C}{J^s} = C\cdot J^{-s}$$ 
+	para una constante $C$. Tomando logaritmos tenemos que:
+	$$log(E) = -s\cdot log(J) + log(C) = -s\cdot log(J) + K$$
+	Obteniendo que $-s$ es la pendiente de la recta representada en escala logarítmica, siendo $s$ el orden del método.
 		
+	Para calcular las pendientes de las rectas  se ha utilizado la función \texttt{polyfit} de \textsc{MatLab} que utiliza mínimos cuadrados para calcular los coeficientes del polinomio que mejor se aproxime a los datos. De esta manera, se han calculado las pendientes de cada recta de la siguiente forma. Si $J$ es el vector de los pasos utilizados y $err$ es el vector de errores, la pendiente de la recta se calcula como sigue:
+	
+	\begin{lstlisting}
+		% Degree 1.
+		poly = polyfit(log(J), log(err), 1);
+		slope = poly(1)
+	\end{lstlisting}
+	
+	\subsection{Análisis de los resultados}
+	\subsubsection{Método explícito}
+	En esta sección se analizan los resultados para el método explícito ($\theta = 0$) con los valores $\nu=\frac{1}{2}$ y $\nu=\frac{1}{6}$. En la figura \ref{fig:error_1_2} se muestra un gráfico comparando los resultados de ambos casos.
+	
+	\fimg{../img/error_1_2.png}{width=\textwidth}{Resultados del método explícito.}{error_1_2}
+	
+	\begin{itemize}
+		\item Caso $\nu = \frac{1}{2}$: Para este valor de $\nu$, el método es estable. En este caso vemos que el orden del error es
+		$$E = \mathcal{O}(\Delta t) + \mathcal{O}((\Delta x)^2)$$
+		
+		Como tenemos un valor fijo para $\nu=\frac{\Delta t}{(\Delta x)^2}=\frac{1}{2}$, tenemos que 
+		$$E = \mathcal{O}((\Delta x)^2)$$
+		luego 
+		$$E = C\cdot (\Delta x)^2 = C\cdot\frac{1}{J^2}$$ 
+		con $C$ una constante. Tomando logaritmos obtenemos que la pendiente teórica ha de ser $-2$:
+		$$log(E) = -2log(J) + K$$
+		
+		Experimentalmente se ha obtenido que la pendiente de la recta es $-1.9948\approx -2$. El error es lineal sobre la variable temporal y cuadrático sobre la variable espacial.
+		
+		\item Caso $\nu = \frac{1}{6}$: Para este valor de $\nu$, el método es estable. Este es un caso particular en el que el error tiene el orden
+		$$E = \mathcal{O}\left((\Delta t)^2\right) + \mathcal{O}\left((\Delta x)^4\right)$$
+		
+		Como tenemos un valor fijo para $\nu=\frac{\Delta t}{(\Delta x)^2}=\frac{1}{6}$, tenemos que 
+		$$E = \mathcal{O}((\Delta x)^4)$$
+		luego 
+		$$E = C\cdot (\Delta x)^4 = C\cdot\frac{1}{J^4}$$ 
+		con $C$ una constante. Tomando logaritmos obtenemos que la pendiente teórica ha de ser $-4$:
+		$$log(E) = -4log(J) + K$$
+		
+		Experimentalmente se ha obtenido que la pendiente de la recta es $-4.0027\approx -4$.  El error es de orden $2$ sobre la derivada temporal y de orden $4$ sobre la derivada espacial.
+	\end{itemize}
+	
+	\subsubsection{Método de Crank-Nicolson}
+	En esta sección se analizan los resultados para el método de Crank-Nicolson ($\theta = \frac{1}{2}$) con los valores $\nu=\frac{1}{2}$ y $\mu=\frac{1}{40}$. En la figura \ref{fig:error_3_4} se muestra un gráfico comparando los resultados de ambos casos.
+	
+	\fimg{../img/error_3_4.png}{width=\textwidth}{Resultados del método de Crank Nicolson.}{error_3_4}
+	
+	\begin{itemize}
+		\item Caso $\nu = \frac{1}{2}$: En este caso el orden del error es
+		$$E = \mathcal{O}((\Delta t)^2) + \mathcal{O}((\Delta x)^2)$$
+		
+		Como tenemos un valor fijo para $\nu=\frac{\Delta t}{(\Delta x)^2}=\frac{1}{2}$, tenemos que 
+		$$E = \mathcal{O}((\Delta x)^2)$$
+		luego 
+		$$E = C\cdot (\Delta x)^2 = C\cdot\frac{1}{J^2}$$ 
+		con $C$ una constante. Tomando logaritmos obtenemos que la pendiente teórica ha de ser $-2$:
+		$$log(E) = -2log(J) + K$$
+		
+		Experimentalmente se ha obtenido que la pendiente de la recta es $-1.9986\approx -2$, luego el método tiene orden $2$.  El error es cuadrático sobre ambas variables, sin embargo, al tener un valor fijo para $\nu$ y por tanto un valor fijo para la relación entre $\Delta t$ y $(\Delta x)^2$, tenemos que $E = \mathcal{O}((\Delta x)^2) = \mathcal{O}(\Delta t)$.
+		
+		\item Caso $\mu = \frac{1}{40}$: En este caso el orden del error es
+		$$E = \mathcal{O}((\Delta t)^2) + \mathcal{O}((\Delta x)^2)$$
+		
+		Como tenemos un valor fijo para $\mu=\frac{\Delta t}{\Delta x}=\frac{1}{40}$, tenemos que 
+		$$E = \mathcal{O}((\Delta x)^2)$$
+		luego 
+		$$E = C\cdot (\Delta x)^2 = C\cdot\frac{1}{J^2}$$ 
+		con $C$ una constante. Tomando logaritmos obtenemos que la pendiente teórica ha de ser $-2$:
+		$$log(E) = -2log(J) + K$$
+		
+		Experimentalmente se ha obtenido que la pendiente de la recta es $-1.9986\approx -2$, luego el método tiene orden $2$. Este método presenta un cambio con respecto al anterior, al fijar el valor de $\mu$ se quita la condición de que la relación entre el paso temporal y el cuadrado del paso espacial sea fija, obteniendo así orden cuadrático en ambas variables para el error.
+	\end{itemize}
+	
+	\subsubsection{Método implícito}
+	En esta sección se analizan los resultados para el método implícito ($\theta = 1$) con los valores $\nu=5$ y $\mu=\frac{1}{4}$. En la figura \ref{fig:error_5_6} se muestra un gráfico comparando los resultados de ambos casos.
+	
+	\fimg{../img/error_5_6.png}{width=\textwidth}{Resultados del método implícito.}{error_5_6}
+	
+	\begin{itemize}
+		\item Caso $\nu = 5$: En este caso el orden del error es
+		$$E = \mathcal{O}(\Delta t) + \mathcal{O}((\Delta x)^2)$$
+		
+		Como tenemos un valor fijo para $\nu=\frac{\Delta t}{(\Delta x)^2}=5$, tenemos que 
+		$$E = \mathcal{O}((\Delta x)^2)$$
+		luego 
+		$$E = C\cdot (\Delta x)^2 = C\cdot\frac{1}{J^2}$$ 
+		con $C$ una constante. Tomando logaritmos obtenemos que la pendiente teórica ha de ser $-2$:
+		$$log(E) = -2log(J) + K$$
+		
+		Vemos que en este caso da igual que $\nu > \frac{1}{2}$ pues el método implícito es siempre convergente y funciona bien para $\nu$ grande.
+		
+		Experimentalmente se ha obtenido que la pendiente de la recta es $-2.1079\approx -2$.  El error es lineal en la variable temporal y cuadrático en la variable espacial.
+		
+		\item Caso $\mu = \frac{1}{4}$: En este caso el orden del error es
+		$$E = \mathcal{O}(\Delta t) + \mathcal{O}((\Delta x)^2)$$
+		
+		Como tenemos un valor fijo para $\mu=\frac{\Delta t}{\Delta x}=\frac{1}{4}$, tenemos que 
+		$$E = \mathcal{O}(\Delta t) = \mathcal{O}(\Delta x)$$
+		luego 
+		$$E = C\cdot \Delta t = C\cdot\frac{1}{J}$$ 
+		con $C$ una constante. Tomando logaritmos obtenemos que la pendiente teórica ha de ser $-1$:
+		$$log(E) = -log(J) + K$$
+		
+		Experimentalmente se ha obtenido que la pendiente de la recta es $-1.0874\approx -1$. El orden del error es lineal para ambas variables, ya que están relacionadas linealmente por el valor fijo de $\mu$.
+		
+		Se puede observar que este método aproxima el resultado de peor forma que en el caso anterior. Esto se debe a que, al fijar el valor de $\mu$, el orden del error del método para la variable espacial se reduce a $1$.
+	\end{itemize}
+	
 	\section{Ejercicio 2}
-	A continuación se muestra un gráfico en escala doblemente logarítmica representando $t_{cpu}$ frente al error en norma infinito en tiempo $t_F = 0.6$ usando distintos valores de $\nu$ y $\mu$ para los tres métodos.
+	En la figura \ref{fig:tcpu} se muestra un gráfico en escala doblemente logarítmica representando $t_{cpu}$ frente al error en norma infinito en tiempo $t_F = 0.6$ usando distintos valores de $\nu$ y $\mu$ para los tres métodos.
+	
+	\fimg{../img/tcpu.png}{width=\textwidth}{$t_{cpu}$ frente al error en norma infinito (Escala logarítima).}{tcpu}
+	
+	Dado que el tiempo de \textsc{CPU} es función tanto de el número de nodos para la variable temporal como el número de nodos de la variable espacial, tenemos que, si $C$ y $K$ son constantes:
+	
+	\begin{itemize}
+		\item Si $\nu$ es constante:
+			$$t_{cpu}=C\cdot N\cdot J = C\cdot\frac{J^2}{\nu}\cdot J = KJ^3$$
+		\item Si $\mu$ es constante:
+			$$t_{cpu}=C\cdot N\cdot J = C\cdot\frac{J}{\mu}\cdot J = KJ^2$$
+	\end{itemize}
+	
+	A partir de estos valores y de los errores obtenidos en el ejercicio anterior, se podrán calcular las pendientes teóricas de las rectas representadas en escala logarítmica.
 	
 	\subsection{Método explícito}
+	\begin{itemize}
+		\item Caso $\nu = \frac{1}{2}$:	En este caso hemos visto que el error es de orden $2$ para la variable espacial.
+		
+		Tenemos 
+		\begin{equation*}
+		\left.
+			\begin{array}{l l l}
+			E &=& C_1 \cdot J^{-2}\\
+			t_{cpu} &=& C_2 \cdot J^3
+			\end{array}
+		\right\} \implies E = K\cdot  t_{cpu}^{-\frac{2}{3}}
+		\end{equation*}
+		
+		Luego tomando logaritmos
+		$$log(E) = -\frac{2}{3}log(t_{cpu})$$
+		
+		Teóricamente, la pendiente de la recta ha de ser $-\frac{2}{3}\approx -0.66667$. El resultado experimental es que la pendiente obtenida es $-1.15814$.
+		
+		\item Caso $\nu = \frac{1}{6}$:	En este caso hemos visto que el error es de orden $4$ para la variable espacial.
+		
+		Tenemos 
+		\begin{equation*}
+			\left.
+			\begin{array}{l l l}
+				E &=& C_1 \cdot J^{-4}\\
+				t_{cpu} &=& C_2 \cdot J^3
+			\end{array}
+			\right\} \implies E = K\cdot  t_{cpu}^{-\frac{4}{3}}
+		\end{equation*}
+		
+		Luego tomando logaritmos
+		$$log(E) = -\frac{4}{3}log(t_{cpu})$$
+		
+		Teóricamente, la pendiente de la recta ha de ser $-\frac{4}{3} \approx -1.3333$. El resultado experimental es que la pendiente obtenida es $-1.94958$.
+		
+		Se puede observar que la pendiente en este caso es muy negativa, lo que implica que el método aproximará con menos error en menos tiempo.
+	\end{itemize}
 	
-	
-	\subsection{Método implícito}
-	
+	El error en el cálculo de los resultados experimentales puede deberse a que el método explícito es computacionalmente menos costoso que el resto de métodos, hecho que puede provocar que la medida sea menos precisa, al tratarse de valores muy pequeños para el tiempo.
 	
 	\subsection{Método de Crank-Nicolson}
+	\begin{itemize}
+		\item Caso $\nu = \frac{1}{2}$: En este caso hemos visto que el error es de orden $2$ para la variable espacial.
+		
+		Tenemos 
+		\begin{equation*}
+			\left.
+			\begin{array}{l l l}
+				E &=& C_1 \cdot J^{-2}\\
+				t_{cpu} &=& C_2 \cdot J^3
+			\end{array}
+			\right\} \implies E = K\cdot  t_{cpu}^{-\frac{2}{3}}
+		\end{equation*}
+		
+		Luego tomando logaritmos
+		$$log(E) = -\frac{2}{3}log(t_{cpu})$$
+		
+		Teóricamente, la pendiente de la recta ha de ser $-\frac{2}{3} \approx -0.66667$. El resultado experimental es que la pendiente obtenida es $-0.76695$.
+		
+		\item Caso $\mu = \frac{1}{40}$: En este caso hemos visto que el error es de orden $2$ para la variable espacial.
+		
+		Tenemos 
+		\begin{equation*}
+			\left.
+			\begin{array}{l l l}
+				E &=& C_1 \cdot J^{-2}\\
+				t_{cpu} &=& C_2 \cdot J^2
+			\end{array}
+			\right\} \implies E = K\cdot  t_{cpu}^{-1}
+		\end{equation*}
+		
+		Luego tomando logaritmos
+		$$log(E) = -log(t_{cpu})$$
+		
+		Teóricamente, la pendiente de la recta ha de ser $-1$. El resultado experimental es que la pendiente obtenida es $-1.23301$.
+		
+		En este caso también se puede observar que la pendiente es muy negativa. Hay que tener en cuenta que, dado que $E = \mathcal{O}((\Delta t)^2)+\mathcal{O}((\Delta x)^2)$, se puede elegir $\mu$ fija y por tanto $\Delta t$ del mismo orden que $\Delta x$, lo que implica que no hay que reducir tanto el paso temporal.
+	\end{itemize}
 	
+	\subsection{Método implícito}
+	\begin{itemize}
+		\item Caso $\nu = 5$: En este caso hemos visto que el error es de orden $2$ para la variable espacial.
+		
+		Tenemos 
+		\begin{equation*}
+			\left.
+			\begin{array}{l l l}
+				E &=& C_1 \cdot J^{-2}\\
+				t_{cpu} &=& C_2 \cdot J^3
+			\end{array}
+			\right\} \implies E = K\cdot  t_{cpu}^{-\frac{2}{3}}
+		\end{equation*}
+		
+		Luego tomando logaritmos
+		$$log(E) = -\frac{2}{3}log(t_{cpu})$$
+		
+		Teóricamente, la pendiente de la recta ha de ser $-\frac{2}{3} \approx -0.66667$. El resultado experimental es que la pendiente obtenida es $-0.81102$.
+		
+		\item Caso $\mu = \frac{1}{4}$: En este caso hemos visto que el error es de orden $1$ para la variable espacial.
+		
+		Tenemos 
+		\begin{equation*}
+			\left.
+			\begin{array}{l l l}
+				E &=& C_1 \cdot J^{-1}\\
+				t_{cpu} &=& C_2 \cdot J^2
+			\end{array}
+			\right\} \implies E = K\cdot  t_{cpu}^{-\frac{1}{2}}
+		\end{equation*}
+		
+		Luego tomando logaritmos
+		$$log(E) = -\frac{1}{2}log(t_{cpu})$$
+		
+		Teóricamente, la pendiente de la recta ha de ser $-\frac{1}{2}$. El resultado experimental es que la pendiente obtenida es $-0.67017$.
+	\end{itemize}	
 	
+	Los métodos que ofrecen una pendiente más negativa, es decir, que aproximan la solución con menos error en un tiempo menor, son el método explícito con $\nu = \frac{1}{6}$ y el método de Crank-Nicolson con $\mu = \frac{1}{40}$. El método de Crank-Nicolson tiene la ventaja de que no obliga a tomar pasos temporales muy pequeños, sino que se pueden tomar del mismo orden que el paso para la variable espacial.
 \end{document}

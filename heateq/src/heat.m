@@ -20,10 +20,24 @@ for i = 1 : length(theta)
   end
 end
 
+% Slopes for errors
+slopes = zeros(size(err, 1), 1);
+for i = 1 : size(err, 1)
+  poly = polyfit(log(J), log(err(i,:)), 1);
+  slopes(i, 1) = poly(1);
+end
+
+% Slopes for tcpu
+slopes2 = zeros(size(err, 1), 1);
+for i = 1 : size(err, 1)
+  poly = polyfit(log(t_cpu(i,:)), log(err(i,:)), 1);
+  slopes2(i, 1) = poly(1);
+end
+
 % Plots each row of the 'err' matrix with logarithsmic scales.
 for i = 1 : size(err,1)
   loglog(J, err(i,:), 'DisplayName', strcat('theta=',num2str(theta(i)), ', nu=', num2str(nu(i)), ', mu=', num2str(mu(i))))
-  hold on
+  hold all
   xlabel('J')
   ylabel('Error')
 end
@@ -34,7 +48,7 @@ legend(gca, 'show')
 figure
 for i = 1 : size(t_cpu,1)
   loglog(t_cpu(i,:), err(i,:), 'DisplayName', strcat('theta=',num2str(theta(i)), ', nu=', num2str(nu(i)), ', mu=', num2str(mu(i))))
-  hold on
+  hold all
   xlabel('CPU time')
   ylabel('Error')
 end

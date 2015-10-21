@@ -15,9 +15,6 @@
 %   - U: numerical approximation at time tF. (J+1 x 1)
 %   - t_cpu: execution time. (1 x 1)
 function [x, U, t_cpu] = thetamet(theta, J, tF, nu, mu)
-    % Start stopwatch timer
-    tic;
-    
     % Initialize N (number of nodes for the variable t)
     if nu > 0
         N = round(tF*J*J/nu);
@@ -39,10 +36,14 @@ function [x, U, t_cpu] = thetamet(theta, J, tF, nu, mu)
     % Tridiagonal matrices
     A = tridiag(J-1, -nu*theta, 1+2*nu*theta, -nu*theta);
     B = tridiag(J-1, (1-theta)*nu, 1-(1-theta)*2*nu, (1-theta)*nu);
+    AinvB = A\B;
+    
+    % Start stopwatch timer
+    tic;
     
     % theta-method
     for t_n = 1 : N
-      U(2:end-1, 1) = A \ (B * U(2:end-1, 1));
+      U(2:end-1, 1) = AinvB * U(2:end-1, 1);
     end
 
     % Read elapsed time from stopwatch
