@@ -1,6 +1,6 @@
 % Solution for the heat equation problem with:
-%   - Initial value:  x(0) = x(1) = 0
-%   - Boundary value: u_0  = x(1-x)
+%   - Initial value:  u(x,0) = x(1-x)
+%   - Boundary value: u(0,t) = u(1,t) = 0
 % 
 % Parameters:
 %   - x: vector of nodes. (J+1 x 1)

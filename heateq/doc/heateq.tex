@@ -171,13 +171,6 @@
 			\end{align*}
 			\end{itemize}
 			
-			Escrito de otro modo, tenemos que
-			\begin{align*}
-			T_j^n = & \left[\left(\frac{1}{2}-\theta\right)\Delta t u_{xxt}- \frac{1}{12}(\Delta x)^2 u_{xxxx}\right]
-			+ \left[\frac{1}{24}\Delta t^2 u_{ttt}-\frac{1}{8}\Delta t ^2 u_{xxtt}\right]\\
-			& + \left[\frac{1}{12}\left(\frac{1}{2}-\theta\right)\Delta t \Delta x^2 u_{xxxxt}\right] - \frac{2}{6!}\Delta x ^4 u_{xxxxxx}
-			\end{align*}
-			
 			En general tenemos que $T_j^n = \mathcal{O}(\Delta t) + \mathcal{O}\left((\Delta x)^2\right)$. En conclusión, el método es incondicionalmente consistente ya que 
 			$$T_j^n  \scriptstyle{\xrightarrow{\Delta t\to0,\ \Delta x \to 0}} \textstyle\ 0$$
 			
@@ -189,7 +182,7 @@
 			$$U_j^{n+1} = U_j^n + \nu\theta\left[U_{j+1}^{n+1} - 2U_{j}^{n+1} + U_{j-1}^{n+1}\right] + \nu(1-\theta)\left[U_{j+1}^{n}-2U_{j}^{n}+U_{j-1}^{n}\right]$$
 			
 			\begin{itemize}
-				\item \textbf{Paso 1: } Sustituimos $U_j^n$ por $\lambda^n(k)e^{ikj\Delta x}$ en el método obteniendo
+				\item Sustituimos $U_j^n$ por $\lambda^n(k)e^{ikj\Delta x}$ en el método obteniendo
 				\begin{align*}
 					\lambda^{n+1}e^{ikj\Delta x} =&\  \lambda^ne^{ijk\Delta x}\\
 					&+\nu\theta\lambda^{n+1}\left[e^{ik(j+1)\Delta x}-2e^{ik(j)\Delta x}+e^{ik(j-1)\Delta x}\right]\\
