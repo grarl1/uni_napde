@@ -5,17 +5,17 @@
 % 
 % Parameters:
 %   - x: vector of nodes. (J+1 x 1)
-%   - t: time value. (1 x 1)
+%   - T: time value. (1 x 1)
 %
 % Return:
 %   - Usol: vector of solution values. (J+1 x 1)
 %
-function [Usol] = adveq_sol(x, t)
+function [Usol] = adveq_sol(x, T)
 
   % Along the characteristics, the solution is constant
-  x_s = x - (t ./ (1+x.^2));
+  x_s = x - (T ./ (1 + x.^2));
   
   % Apply initial value over x_s
-  Usol = (0.2 <= x_s) & (x_s <= 0.4);
-
+  Usol = double((0.2 <= x_s) & (x_s <= 0.4));
+  Usol = Usol(:);
 end
